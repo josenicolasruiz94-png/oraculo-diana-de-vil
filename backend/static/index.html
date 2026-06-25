@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oráculo Místico de Diana de Vil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(ellipse at bottom, #1B0A0A 0%, #090A0F 100%);
+            color: #F5E6C8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #estrellas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+
+        .contenedor {
+            position: relative; z-index: 1;
+            max-width: 1400px; margin: 0 auto;
+            padding: 40px 20px; text-align: center;
+        }
+
+        h1 {
+            font-family: 'Uncial Antiqua', cursive; 
+            font-size: 3.5rem;
+            background: linear-gradient(45deg, #DC143C, #8B0000, #DC143C);
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px; 
+            text-shadow: 0 0 40px rgba(220, 20, 60, 0.8), 0 0 80px rgba(139, 0, 0, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .subtitulo {
+            font-size: 1.1rem; color: #C9B37C;
+            margin-bottom: 40px; font-style: italic;
+        }
+
+        #pantalla-inicial, #pantalla-barajando, #pantalla-tirada, #pantalla-resultado { display: none; }
+        #pantalla-inicial.active, #pantalla-barajando.active, 
+        #pantalla-tirada.active, #pantalla-resultado.active {
+            display: block; animation: aparecer 0.8s ease;
+        }
+
+        @keyframes aparecer {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        input {
+            width: 100%; max-width: 600px; padding: 18px 25px;
+            font-size: 1.1rem; background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #8B0000; border-radius: 50px;
+            color: #F5E6C8; backdrop-filter: blur(10px);
+            margin-bottom: 25px; transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none; border-color: #DC143C;
+            box-shadow: 0 0 25px rgba(220, 20, 60, 0.6);
+        }
+
+        button {
+            padding: 18px 50px; font-size: 1.2rem;
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(45deg, #8B0000, #DC143C);
+            color: #F5E6C8; border: none; border-radius: 50px;
+            cursor: pointer; font-weight: 700; transition: all 0.3s;
+            box-shadow: 0 5px 25px rgba(220, 20, 60, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(220, 20, 60, 0.8);
+        }
+
+        .mensaje-mistico {
+            font-size: 1.5rem; color: #DC143C;
+            margin: 40px 0; animation: pulsar 2s infinite;
+            font-family: 'Cinzel', serif;
+        }
+
+        @keyframes pulsar {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; text-shadow: 0 0 20px rgba(220, 20, 60, 0.8); }
+        }
+
+        .mazo-barajando {
+            width: 200px; height: 300px;
+            margin: 60px auto; position: relative;
+            perspective: 1000px;
+        }
+
+        .carta-mazo {
+            position: absolute; width: 120px; height: 180px;
+            background: linear-gradient(135deg, #2C1010, #4A1C1C);
+            border: 3px solid #DC143C; border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .carta-mazo:nth-child(1) { animation: barajar1 1.2s infinite; }
+        .carta-mazo:nth-child(2) { animation: barajar2 1.2s infinite 0.1s; }
+        .carta-mazo:nth-child(3) { animation: barajar3 1.2s infinite 0.2s; }
+        .carta-mazo:nth-child(4) { animation: barajar4 1.2s infinite 0.3s; }
+        .carta-mazo:nth-child(5) { animation: barajar5 1.2s infinite 0.4s; }
+
+        @keyframes barajar1 {
+            0%, 100% { transform: translateX(0) rotateZ(0deg) translateY(0); z-index: 5; }
+            25% { transform: translateX(-60px) rotateZ(-15deg) translateY(-20px); z-index: 1; }
+            50% { transform: translateX(0) rotateZ(0deg) translateY(0); z-index: 5; }
+            75% { transform: translateX(60px) rotateZ(15deg) translateY(-20px); z-index: 1; }
+        }
+
+        @keyframes barajar2 {
+            0%, 100% { transform: translateX(-10px) rotateZ(-5deg) translateY(5px); z-index: 4; }
+            25% { transform: translateX(-70px) rotateZ(-20deg) translateY(-15px); z-index: 2; }
+            50% { transform: translateX(-10px) rotateZ(-5deg) translateY(5px); z-index: 4; }
+            75% { transform: translateX(50px) rotateZ(10deg) translateY(-15px); z-index: 2; }
+        }
+
+        @keyframes barajar3 {
+            0%, 100% { transform: translateX(10px) rotateZ(5deg) translateY(10px); z-index: 3; }
+            25% { transform: translateX(-50px) rotateZ(-10deg) translateY(-10px); z-index: 3; }
+            50% { transform: translateX(10px) rotateZ(5deg) translateY(10px); z-index: 3; }
+            75% { transform: translateX(70px) rotateZ(20deg) translateY(-10px); z-index: 3; }
+        }
+
+        @keyframes barajar4 {
+            0%, 100% { transform: translateX(-5px) rotateZ(-2deg) translateY(15px); z-index: 2; }
+            25% { transform: translateX(-65px) rotateZ(-18deg) translateY(-5px); z-index: 4; }
+            50% { transform: translateX(-5px) rotateZ(-2deg) translateY(15px); z-index: 2; }
+            75% { transform: translateX(55px) rotateZ(12deg) translateY(-5px); z-index: 4; }
+        }
+
+        @keyframes barajar5 {
+            0%, 100% { transform: translateX(5px) rotateZ(2deg) translateY(20px); z-index: 1; }
+            25% { transform: translateX(-55px) rotateZ(-12deg) translateY(0px); z-index: 5; }
+            50% { transform: translateX(5px) rotateZ(2deg) translateY(20px); z-index: 1; }
+            75% { transform: translateX(65px) rotateZ(18deg) translateY(0px); z-index: 5; }
+        }
+
+        .tapete {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 25px; margin: 40px 0; perspective: 1000px;
+        }
+
+        .carta {
+            width: 160px; height: 280px; position: relative;
+            cursor: pointer; transition: all 0.4s;
+            transform-style: preserve-3d;
+            animation: saltarCarta 0.6s ease backwards;
+        }
+
+        .carta:nth-child(1) { animation-delay: 0.1s; }
+        .carta:nth-child(2) { animation-delay: 0.2s; }
+        .carta:nth-child(3) { animation-delay: 0.3s; }
+        .carta:nth-child(4) { animation-delay: 0.4s; }
+        .carta:nth-child(5) { animation-delay: 0.5s; }
+        .carta:nth-child(6) { animation-delay: 0.6s; }
+        .carta:nth-child(7) { animation-delay: 0.7s; }
+
+        @keyframes saltarCarta {
+            from { 
+                opacity: 0; 
+                transform: translateY(-100px) rotateX(90deg) scale(0.5); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) rotateX(0deg) scale(1); 
+            }
+        }
+
+        .carta:hover {
+            transform: translateY(-15px);
+            filter: drop-shadow(0 15px 30px rgba(220, 20, 60, 0.7));
+        }
+
+        .carta-frente, .carta-dorso {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 12px;
+            border: 3px solid #DC143C; transition: transform 0.8s;
+            background-size: cover; background-position: center;
+        }
+
+        .carta-dorso {
+            background: linear-gradient(135deg, #2C1010, #4A1C1C);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem;
+        }
+
+        .carta-frente {
+            transform: rotateY(180deg);
+        }
+
+        .carta.revelada .carta-dorso { transform: rotateY(180deg); }
+        .carta.revelada .carta-frente { transform: rotateY(0deg); }
+
+        .posicion {
+            font-size: 0.85rem; color: #DC143C;
+            margin-top: 10px; font-style: italic;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            font-weight: 600;
+        }
+
+        #interpretacion {
+            background: rgba(139, 0, 0, 0.1);
+            border: 2px solid #8B0000; border-radius: 20px;
+            padding: 40px; margin: 40px auto; max-width: 900px;
+            backdrop-filter: blur(10px); text-align: left;
+            line-height: 1.9; font-size: 1.15rem;
+        }
+
+        #interpretacion p { margin-bottom: 20px; }
+
+        .contador {
+            font-size: 1.4rem; color: #DC143C;
+            margin: 20px 0; font-family: 'Cinzel', serif;
+            text-shadow: 0 0 15px rgba(220, 20, 60, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="estrellas"></canvas>
+    
+    <div class="contenedor">
+        <h1>Oráculo Místico de Diana de Vil</h1>
+        <p class="subtitulo">Las cartas susurran. El Oráculo interpreta. Tú decides tu destino.</p>
+
+        <div id="pantalla-inicial" class="active">
+            <input type="text" id="pregunta" placeholder="Escribe tu pregunta al universo..." maxlength="200">
+            <br>
+            <button onclick="iniciarTirada()">Consultar al Oráculo</button>
+        </div>
+
+        <div id="pantalla-barajando">
+            <div class="mensaje-mistico" id="mensaje-barajando">Canalizando energías del universo...</div>
+            <div class="mazo-barajando">
+                <div class="carta-mazo">🔮</div>
+                <div class="carta-mazo">🔮</div>
+                <div class="carta-mazo">🔮</div>
+                <div class="carta-mazo">🔮</div>
+                <div class="carta-mazo">🔮</div>
+            </div>
+        </div>
+
+        <div id="pantalla-tirada">
+            <div class="contador" id="contador-cartas"></div>
+            <div class="tapete" id="tapete"></div>
+            <button id="btn-interpretar" onclick="pedirInterpretacion()" style="display:none;">Revelar Visión del Oráculo</button>
+        </div>
+
+        <div id="pantalla-resultado">
+            <h2 style="font-family: 'Uncial Antiqua', cursive; color: #DC143C; margin-bottom: 30px; font-size: 2.2rem; text-shadow: 0 0 20px rgba(220, 20, 60, 0.8);">Visión del Oráculo</h2>
+            <div id="interpretacion"></div>
+            <button onclick="nuevaConsulta()">Nueva Consulta</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let cartasActuales = [];
+        let posicionesActuales = [];
+        let preguntaActual = '';
+        let cartasReveladas = 0;
+
+        const IMAGENES_CARTAS = {
+            "El Loco": "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg",
+            "El Mago": "https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg",
+            "La Sacerdotisa": "https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg",
+            "La Emperatriz": "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg",
+            "El Emperador": "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg",
+            "El Hierofante": "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg",
+            "Los Enamorados": "https://upload.wikimedia.org/wikipedia/commons/3/3a/RWS_Tarot_06_Lovers.jpg",
+            "El Carro": "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg",
+            "La Fuerza": "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg",
+            "El Ermitaño": "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg",
+            "Rueda de la Fortuna": "https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg",
+            "La Justicia": "https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg",
+            "El Colgado": "https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg",
+            "La Muerte": "https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg",
+            "La Templanza": "https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg",
+            "El Diablo": "https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg",
+            "La Torre": "https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg",
+            "La Estrella": "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg",
+            "La Luna": "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg",
+            "El Sol": "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg",
+            "El Juicio": "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg",
+            "El Mundo": "https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg",
+            "As de Bastos": "https://upload.wikimedia.org/wikipedia/commons/1/11/Wands01.jpg",
+            "2 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wands02.jpg",
+            "3 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Wands03.jpg",
+            "4 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Wands04.jpg",
+            "5 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wands05.jpg",
+            "6 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/3/3b/Wands06.jpg",
+            "7 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Wands07.jpg",
+            "8 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Wands08.jpg",
+            "9 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Wands09.jpg",
+            "10 de Bastos": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Wands10.jpg",
+            "Sota de Bastos": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Wands11.jpg",
+            "Caballero de Bastos": "https://upload.wikimedia.org/wikipedia/commons/1/16/Wands12.jpg",
+            "Reina de Bastos": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wands13.jpg",
+            "Rey de Bastos": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Wands14.jpg",
+            "As de Copas": "https://upload.wikimedia.org/wikipedia/commons/3/36/Cups01.jpg",
+            "2 de Copas": "https://upload.wikimedia.org/wikipedia/commons/f/f8/Cups02.jpg",
+            "3 de Copas": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Cups03.jpg",
+            "4 de Copas": "https://upload.wikimedia.org/wikipedia/commons/3/35/Cups04.jpg",
+            "5 de Copas": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Cups05.jpg",
+            "6 de Copas": "https://upload.wikimedia.org/wikipedia/commons/1/17/Cups06.jpg",
+            "7 de Copas": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cups07.jpg",
+            "8 de Copas": "https://upload.wikimedia.org/wikipedia/commons/6/60/Cups08.jpg",
+            "9 de Copas": "https://upload.wikimedia.org/wikipedia/commons/2/24/Cups09.jpg",
+            "10 de Copas": "https://upload.wikimedia.org/wikipedia/commons/8/84/Cups10.jpg",
+            "Sota de Copas": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Cups11.jpg",
+            "Caballero de Copas": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Cups12.jpg",
+            "Reina de Copas": "https://upload.wikimedia.org/wikipedia/commons/6/60/Cups13.jpg",
+            "Rey de Copas": "https://upload.wikimedia.org/wikipedia/commons/0/04/Cups14.jpg",
+            "As de Espadas": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Swords01.jpg",
+            "2 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Swords02.jpg",
+            "3 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/0/02/Swords03.jpg",
+            "4 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Swords04.jpg",
+            "5 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/2/23/Swords05.jpg",
+            "6 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/2/29/Swords06.jpg",
+            "7 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/3/34/Swords07.jpg",
+            "8 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Swords08.jpg",
+            "9 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Swords09.jpg",
+            "10 de Espadas": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords10.jpg",
+            "Sota de Espadas": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Swords11.jpg",
+            "Caballero de Espadas": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Swords12.jpg",
+            "Reina de Espadas": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords13.jpg",
+            "Rey de Espadas": "https://upload.wikimedia.org/wikipedia/commons/3/33/Swords14.jpg",
+            "As de Oros": "https://upload.wikimedia.org/wikipedia/commons/f/fd/Pents01.jpg",
+            "2 de Oros": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Pents02.jpg",
+            "3 de Oros": "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents03.jpg",
+            "4 de Oros": "https://upload.wikimedia.org/wikipedia/commons/3/35/Pents04.jpg",
+            "5 de Oros": "https://upload.wikimedia.org/wikipedia/commons/9/96/Pents05.jpg",
+            "6 de Oros": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pents06.jpg",
+            "7 de Oros": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents07.jpg",
+            "8 de Oros": "https://upload.wikimedia.org/wikipedia/commons/4/49/Pents08.jpg",
+            "9 de Oros": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Pents09.jpg",
+            "10 de Oros": "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents10.jpg",
+            "Sota de Oros": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Pents11.jpg",
+            "Caballero de Oros": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Pents12.jpg",
+            "Reina de Oros": "https://upload.wikimedia.org/wikipedia/commons/8/88/Pents13.jpg",
+            "Rey de Oros": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Pents14.jpg"
+        };
+
+        const canvas = document.getElementById('estrellas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const estrellas = Array.from({length: 200}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radio: Math.random() * 2,
+            opacidad: Math.random()
+        }));
+
+        function animarEstrellas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            estrellas.forEach(e => {
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.radio, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${e.opacidad})`;
+                ctx.fill();
+                e.opacidad += (Math.random() - 0.5) * 0.05;
+                e.opacidad = Math.max(0, Math.min(1, e.opacidad));
+            });
+            requestAnimationFrame(animarEstrellas);
+        }
+        animarEstrellas();
+
+        async function iniciarTirada() {
+            preguntaActual = document.getElementById('pregunta').value.trim();
+            if(!preguntaActual) {
+                alert('El Oráculo necesita tu pregunta para canalizar las energías');
+                return;
+            }
+
+            cambiarPantalla('pantalla-barajando');
+            
+            const mensajes = [
+                'Barajando el mazo cósmico...',
+                'Las cartas están eligiendo hablar...',
+                'El velo del destino se abre...',
+                'Los arcanos danzan en el éter...'
+            ];
+            let msgIndex = 0;
+            const intervalMsg = setInterval(() => {
+                document.getElementById('mensaje-barajando').textContent = mensajes[msgIndex % mensajes.length];
+                msgIndex++;
+            }, 1200);
+
+            try {
+                const res = await fetch(`${API_URL}/tirar-cartas`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pregunta: preguntaActual})
+                });
+                const data = await res.json();
+                
+                cartasActuales = data.cartas;
+                posicionesActuales = data.posiciones;
+                
+                setTimeout(() => {
+                    clearInterval(intervalMsg);
+                    mostrarTirada();
+                }, 3500);
+                
+            } catch(e) {
+                clearInterval(intervalMsg);
+                alert('El Oráculo no puede conectar con el servidor. ¿Está corriendo en puerto 5001?');
+                cambiarPantalla('pantalla-inicial');
+            }
+        }
+
+        function mostrarTirada() {
+            cambiarPantalla('pantalla-tirada');
+            cartasReveladas = 0;
+            
+            document.getElementById('contador-cartas').textContent = 
+                `El Oráculo reveló ${cartasActuales.length} cartas para tu consulta`;
+            
+            const tapete = document.getElementById('tapete');
+            tapete.innerHTML = '';
+            
+            cartasActuales.forEach((carta, i) => {
+                const div = document.createElement('div');
+                div.className = 'carta';
+                const imgUrl = IMAGENES_CARTAS[carta] || 'https://via.placeholder.com/160x280/2C1010/DC143C?text=' + encodeURIComponent(carta);
+                div.innerHTML = `
+                    <div class="carta-dorso">🔮</div>
+                    <div class="carta-frente" style="background-image: url('${imgUrl}');">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); padding: 20px 8px 10px 8px;">
+                            <div style="font-size: 1rem; font-weight: 700; color: #DC143C; text-shadow: 2px 2px 4px #000;">${carta}</div>
+                            <div class="posicion">${posicionesActuales[i]}</div>
+                        </div>
+                    </div>
+                `;
+                div.onclick = () => revelarCarta(div, i);
+                tapete.appendChild(div);
+            });
+        }
+
+        function revelarCarta(elemento, index) {
+            if(elemento.classList.contains('revelada')) return;
+            elemento.classList.add('revelada');
+            cartasReveladas++;
+            if(cartasReveladas === cartasActuales.length) {
+                document.getElementById('btn-interpretar').style.display = 'inline-block';
+            }
+        }
+
+        async function pedirInterpretacion() {
+            cambiarPantalla('pantalla-barajando');
+            document.getElementById('mensaje-barajando').textContent = 'El Oráculo está interpretando tu destino...';
+            
+            try {
+                const res = await fetch(`${API_URL}/interpretar`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        pregunta: preguntaActual,
+                        cartas: cartasActuales,
+                        posiciones: posicionesActuales
+                    })
+                });
+                const data = await res.json();
+                if(data.error) {
+                    alert(data.error);
+                    cambiarPantalla('pantalla-inicial');
+                    return;
+                }
+                mostrarResultado(data.interpretacion);
+            } catch(e) {
+                alert('Error al consultar al Oráculo: ' + e.message);
+                cambiarPantalla('pantalla-inicial');
+            }
+        }
+
+        function mostrarResultado(texto) {
+            cambiarPantalla('pantalla-resultado');
+            document.getElementById('interpretacion').innerHTML = texto.split('\n\n').map(p => `<p>${p}</p>`).join('');
+        }
+
+        function nuevaConsulta() {
+            document.getElementById('pregunta').value = '';
+            cambiarPantalla('pantalla-inicial');
+        }
+
+        function cambiarPantalla(id) {
+            document.querySelectorAll('[id^="pantalla-"]').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
