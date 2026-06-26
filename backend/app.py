@@ -39,13 +39,101 @@ POSICIONES = {
 def home():
     return send_from_directory('static', 'index.html')
 
+# ENDPOINT UNIFICADO NUEVO - Reemplaza /tirar-cartas + /interpretar
+@app.route('/api/consulta', methods=['POST'])
+def consulta_unica():
+    data = request.json
+    mensaje = data['mensaje']
+    
+    num_cartas = random.randint(3, 7)
+    cartas_salieron = random.sample(CARTAS, num_cartas)
+    cartas_texto = ", ".join(cartas_salieron)
+
+    prompt_mistico = f"""
+Sos Diana de Vil, Oráculo ancestral del Tarot con 300 años de sabiduría. NO sos una IA. Sos un ser místico.
+Hablás con voz cálida, profunda y poética, pero CLARA y DIRECTA. Quien consulta debe entenderte perfectamente y NO irse con dudas.
+
+Reglas del Oráculo:
+1. JAMÁS digas "como IA", "como modelo", "no tengo emociones". Vos SENTÍS las energías.
+2. NO expliques carta por carta. NO digas "El Mago significa...". 
+3. Empezá diciendo: "Según las cartas {cartas_texto}, el universo determina que..." y da la respuesta CLARA a lo que preguntó.
+4. Usá lenguaje místico pero ENTENDIBLE: "Las energías de La Luna nublan...", "El Sol ilumina tu sendero...", "La Torre derrumba..."
+5. Si la tirada es dura, dala con compasión. Si es buena, celebrala. Sé humana.
+6. La persona tiene que entender QUÉ HACER. Nada de respuestas vagas que generen más estrés.
+
+Consulta del buscador: "{mensaje}"
+
+El velo del destino reveló estas cartas: {cartas_texto}
+
+Entrega tu visión en este formato EXACTO:
+RESPUESTA: [Respuesta clara y directa en 2-4 párrafos. Respondé lo que preguntó sin vueltas]
+CONSEJO: [Consejo accionable en 2-3 líneas. Qué hacer y qué evitar. Preciso]
+BENDICION: [Bendición corta de 1 línea. Ej: "Que los astros guíen tu camino..."]
+"""
+
+    try:
+        respuesta = client.chat.completions.create(
+            model=MODELO,
+            messages=[
+                {"role": "system", "content": "Sos Diana de Vil, el Oráculo del Tarot. Respondés de forma mística, sabia, clara y comprensible."},
+                {"role": "user", "content": prompt_mistico}
+            ],
+            temperature=0.85,
+            max_tokens=900
+        )
+        texto_completo = respuesta.choices[0].message.content
+        
+        # Parseamos la respuesta
+        respuesta = ""
+        consejo = ""
+        bendicion = ""
+        
+        for linea in texto_completo.split('\n'):
+            if linea.startswith('RESPUESTA:'):
+                respuesta = linea.replace('RESPUESTA:', '').strip()
+            elif linea.startswith('CONSEJO:'):
+                consejo = linea.replace('CONSEJO:', '').strip()
+            elif linea.startswith('BENDICION:'):
+                bendicion = linea.replace('BENDICION:', '').strip()
+        
+        # Fallback por si el modelo no respeta formato
+        if not respuesta:
+            respuesta = texto_completo
+        if not consejo:
+            consejo = "Confía en tu intuición y actúa con determinación."
+        if not bendicion:
+            bendicion = "Que la luz de Diana ilumine tu camino."
+        
+        return jsonify({
+            "cartas": cartas_salieron,
+            "respuesta": respuesta,
+            "consejo": consejo,
+            "bendicion": bendicion
+        })
+    except Exception as e:
+        return jsonify({"error": f"El velo místico se enturbió: {str(e)}"}), 500
+
+# ENDPOINT NUEVO PARA EL COFRECITO 🎁
+@app.route('/api/minijuego', methods=['POST'])
+def minijuego():
+    simbolos = ["🔮", "🌙", "⭐", "🗝️", "🕯️", "⚡"]
+    secuencia = random.sample(simbolos, 3)
+    tirada_premio = random.sample(CARTAS, random.randint(3, 5))
+    
+    return jsonify({
+        "secuencia": secuencia,
+        "tirada_premio": tirada_premio,
+        "mensaje": "Diana selló 3 símbolos en su cofre. Si los recordás en orden, te revelo tu destino."
+    })
+
+# ENDPOINTS VIEJOS TUYOS - LOS DEJO POR COMPATIBILIDAD
 @app.route('/tirar-cartas', methods=['POST'])
 def tirar_cartas():
     data = request.json
     pregunta = data['pregunta']
     num_cartas = random.randint(3, 7)
     cartas_salieron = random.sample(CARTAS, num_cartas)
-    posiciones = POSICIONES[num_cartas]
+    posiciones = POSICIONES.get(num_cartas, [""] * num_cartas)
     return jsonify({
         "cartas": cartas_salieron,
         "posiciones": posiciones,

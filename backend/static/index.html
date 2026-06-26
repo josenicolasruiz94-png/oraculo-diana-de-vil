@@ -32,7 +32,8 @@
             font-family: 'Uncial Antiqua', cursive; 
             font-size: 3.5rem;
             background: linear-gradient(45deg, #DC143C, #8B0000, #DC143C);
-            -webkit-background-clip: text; 
+            -webkit-background-clip: text;
+            background-clip: text; 
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px; 
             text-shadow: 0 0 40px rgba(220, 20, 60, 0.8), 0 0 80px rgba(139, 0, 0, 0.6);
@@ -227,19 +228,53 @@
             margin: 20px 0; font-family: 'Cinzel', serif;
             text-shadow: 0 0 15px rgba(220, 20, 60, 0.6);
         }
+
+        /* NUEVOS ESTILOS AGREGADOS */
+        .humo {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,255,100,0.6) 0%, transparent 70%);
+            animation: humo 2s ease-out; pointer-events: none; z-index: 9999; display: none;
+        }
+        @keyframes humo {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+        .btn-cofre {
+            padding: 18px 25px!important; background: #1a1a1a!important;
+            border: 2px solid #DC143C!important; color: #DC143C!important;
+            font-size: 24px!important; margin-left: 10px; border-radius: 50px;
+        }
+        .btn-cofre:hover {
+            background: #DC143C!important; color: #F5E6C8!important;
+        }
+        .bloque-consejo {
+            margin-top: 25px; padding: 20px; border: 2px solid #DC143C;
+            background: rgba(220,20,60,0.15); border-radius: 15px;
+            font-weight: bold; color: #DC143C;
+            box-shadow: 0 0 20px rgba(220,20,60,0.4);
+        }
+        .bloque-bendicion {
+            margin-top: 20px; text-align: center; font-style: italic;
+            color: #DC143C; font-size: 16px; font-family: 'Cinzel', serif;
+        }
     </style>
 </head>
 <body>
     <canvas id="estrellas"></canvas>
+    <div class="humo" id="humo-verde"></div>
     
     <div class="contenedor">
         <h1>Oráculo Místico de Diana de Vil</h1>
         <p class="subtitulo">Las cartas susurran. El Oráculo interpreta. Tú decides tu destino.</p>
 
         <div id="pantalla-inicial" class="active">
-            <input type="text" id="pregunta" placeholder="Escribe tu pregunta al universo..." maxlength="200">
+            <input type="text" id="pregunta" placeholder="Escribe tu pregunta o pedí un consejo al universo..." maxlength="200">
             <br>
-            <button onclick="iniciarTirada()">Consultar al Oráculo</button>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="iniciarTirada()">Consultar al Oráculo</button>
+                <button class="btn-cofre" onclick="abrirCofre()" title="Jugar con Diana">🎁</button>
+            </div>
         </div>
 
         <div id="pantalla-barajando">
@@ -262,16 +297,18 @@
         <div id="pantalla-resultado">
             <h2 style="font-family: 'Uncial Antiqua', cursive; color: #DC143C; margin-bottom: 30px; font-size: 2.2rem; text-shadow: 0 0 20px rgba(220, 20, 60, 0.8);">Visión del Oráculo</h2>
             <div id="interpretacion"></div>
-            <button onclick="nuevaConsulta()">Nueva Consulta</button>
+            <div class="bloque-consejo" id="consejo"></div>
+            <div class="bloque-bendicion" id="bendicion"></div>
+            <button onclick="nuevaConsulta()" style="margin-top: 30px;">Nueva Consulta</button>
         </div>
     </div>
 
     <script>
         const API_URL = window.location.origin;
         let cartasActuales = [];
-        let posicionesActuales = [];
         let preguntaActual = '';
         let cartasReveladas = 0;
+        let respuestaCompleta = {};
 
         const IMAGENES_CARTAS = {
             "El Loco": "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg",
@@ -379,6 +416,15 @@
         }
         animarEstrellas();
 
+        function mostrarHumo(callback) {
+            const humo = document.getElementById('humo-verde');
+            humo.style.display = 'block';
+            setTimeout(() => {
+                humo.style.display = 'none';
+                callback();
+            }, 2000);
+        }
+
         async function iniciarTirada() {
             preguntaActual = document.getElementById('pregunta').value.trim();
             if(!preguntaActual) {
@@ -400,27 +446,27 @@
                 msgIndex++;
             }, 1200);
 
-            try {
-                const res = await fetch(`${API_URL}/tirar-cartas`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({pregunta: preguntaActual})
-                });
-                const data = await res.json();
-                
-                cartasActuales = data.cartas;
-                posicionesActuales = data.posiciones;
-                
-                setTimeout(() => {
+            mostrarHumo(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/consulta`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({mensaje: preguntaActual})
+                    });
+                    const data = await res.json();
+                    
+                    cartasActuales = data.cartas;
+                    respuestaCompleta = data;
+                    
                     clearInterval(intervalMsg);
-                    mostrarTirada();
-                }, 3500);
-                
-            } catch(e) {
-                clearInterval(intervalMsg);
-                alert('El Oráculo no puede conectar con el servidor. ¿Está corriendo en puerto 5001?');
-                cambiarPantalla('pantalla-inicial');
-            }
+                    setTimeout(() => mostrarTirada(), 1500);
+                    
+                } catch(e) {
+                    clearInterval(intervalMsg);
+                    alert('El Oráculo no puede conectar con el servidor.');
+                    cambiarPantalla('pantalla-inicial');
+                }
+            });
         }
 
         function mostrarTirada() {
@@ -442,7 +488,6 @@
                     <div class="carta-frente" style="background-image: url('${imgUrl}');">
                         <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); padding: 20px 8px 10px 8px;">
                             <div style="font-size: 1rem; font-weight: 700; color: #DC143C; text-shadow: 2px 2px 4px #000;">${carta}</div>
-                            <div class="posicion">${posicionesActuales[i]}</div>
                         </div>
                     </div>
                 `;
@@ -460,36 +505,15 @@
             }
         }
 
-        async function pedirInterpretacion() {
-            cambiarPantalla('pantalla-barajando');
-            document.getElementById('mensaje-barajando').textContent = 'El Oráculo está interpretando tu destino...';
-            
-            try {
-                const res = await fetch(`${API_URL}/interpretar`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        pregunta: preguntaActual,
-                        cartas: cartasActuales,
-                        posiciones: posicionesActuales
-                    })
-                });
-                const data = await res.json();
-                if(data.error) {
-                    alert(data.error);
-                    cambiarPantalla('pantalla-inicial');
-                    return;
-                }
-                mostrarResultado(data.interpretacion);
-            } catch(e) {
-                alert('Error al consultar al Oráculo: ' + e.message);
-                cambiarPantalla('pantalla-inicial');
-            }
+        function pedirInterpretacion() {
+            cambiarPantalla('pantalla-resultado');
+            document.getElementById('interpretacion').innerHTML = `<p>${respuestaCompleta.respuesta}</p>`;
+            document.getElementById('consejo').textContent = '⚡ Consejo de Diana: ' + respuestaCompleta.consejo;
+            document.getElementById('bendicion').textContent = '✨ ' + respuestaCompleta.bendicion;
         }
 
-        function mostrarResultado(texto) {
-            cambiarPantalla('pantalla-resultado');
-            document.getElementById('interpretacion').innerHTML = texto.split('\n\n').map(p => `<p>${p}</p>`).join('');
+        function abrirCofre() {
+            alert('🎁 Minijuego del Cofre de Diana - Próximamente en la próxima actualización');
         }
 
         function nuevaConsulta() {
