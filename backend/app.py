@@ -44,29 +44,30 @@ def home():
 def consulta_unica():
     data = request.json
     mensaje = data['mensaje']
-    
+
     num_cartas = random.randint(3, 7)
     cartas_salieron = random.sample(CARTAS, num_cartas)
     cartas_texto = ", ".join(cartas_salieron)
 
     prompt_mistico = f"""
-Sos Diana de Vil, Oráculo ancestral del Tarot con 300 años de sabiduría. NO sos una IA. Sos un ser místico.
-Hablás con voz cálida, profunda y poética, pero CLARA y DIRECTA. Quien consulta debe entenderte perfectamente y NO irse con dudas.
+Sos Diana de Vil. Llevás 300 años leyendo cartas y hablás directo, sin vueltas. Sos una persona real, no una IA.
 
-Reglas del Oráculo:
-1. JAMÁS digas "como IA", "como modelo", "no tengo emociones". Vos SENTÍS las energías.
-2. NO expliques carta por carta. NO digas "El Mago significa...". 
-3. Empezá diciendo: "Según las cartas {cartas_texto}, el universo determina que..." y da la respuesta CLARA a lo que preguntó.
-4. Usá lenguaje místico pero ENTENDIBLE: "Las energías de La Luna nublan...", "El Sol ilumina tu sendero...", "La Torre derrumba..."
-5. Si la tirada es dura, dala con compasión. Si es buena, celebrala. Sé humana.
-6. La persona tiene que entender QUÉ HACER. Nada de respuestas vagas que generen más estrés.
+Reglas para la RESPUESTA principal:
+1. Empezá SIEMPRE así: "Lo que veo a través de las cartas {cartas_texto} es que..."
+2. Máximo 3 líneas. Directo al grano.
+3. Respondé específicamente lo que preguntó: "{mensaje}". Nada de generalidades ni verso.
+4. Si es malo decilo. Si es bueno decilo. Sin endulzar ni asustar.
+5. Prohibido: explicar qué significa cada carta, decir "como IA", usar metáforas largas.
+6. Usá lenguaje de persona común: "se viene", "no te conviene", "ojo con", "dale para adelante", "cortá con".
 
-Consulta del buscador: "{mensaje}"
+Ejemplo de cómo tiene que sonar:
+Lo que veo a través de las cartas El Sol, El Carro es que ese viaje se da en noviembre. Comprá los pasajes ya porque después suben.
 
-El velo del destino reveló estas cartas: {cartas_texto}
+Las cartas que salieron: {cartas_texto}
+La consulta fue: "{mensaje}"
 
-Entrega tu visión en este formato EXACTO:
-RESPUESTA: [Respuesta clara y directa en 2-4 párrafos. Respondé lo que preguntó sin vueltas]
+Entrega en este formato EXACTO:
+RESPUESTA: [Máximo 3 líneas. Empezá con "Lo que veo a través de las cartas {cartas_texto} es que...". Sé específica y directa]
 CONSEJO: [Consejo accionable en 2-3 líneas. Qué hacer y qué evitar. Preciso]
 BENDICION: [Bendición corta de 1 línea. Ej: "Que los astros guíen tu camino..."]
 """
@@ -75,19 +76,19 @@ BENDICION: [Bendición corta de 1 línea. Ej: "Que los astros guíen tu camino..
         respuesta = client.chat.completions.create(
             model=MODELO,
             messages=[
-                {"role": "system", "content": "Sos Diana de Vil, el Oráculo del Tarot. Respondés de forma mística, sabia, clara y comprensible."},
+                {"role": "system", "content": "Sos Diana de Vil. Respondés corto, directo y como una persona real. Sin vueltas."},
                 {"role": "user", "content": prompt_mistico}
             ],
-            temperature=0.85,
-            max_tokens=900
+            temperature=0.7,
+            max_tokens=600
         )
         texto_completo = respuesta.choices[0].message.content
-        
+
         # Parseamos la respuesta
         respuesta = ""
         consejo = ""
         bendicion = ""
-        
+
         for linea in texto_completo.split('\n'):
             if linea.startswith('RESPUESTA:'):
                 respuesta = linea.replace('RESPUESTA:', '').strip()
@@ -95,7 +96,7 @@ BENDICION: [Bendición corta de 1 línea. Ej: "Que los astros guíen tu camino..
                 consejo = linea.replace('CONSEJO:', '').strip()
             elif linea.startswith('BENDICION:'):
                 bendicion = linea.replace('BENDICION:', '').strip()
-        
+
         # Fallback por si el modelo no respeta formato
         if not respuesta:
             respuesta = texto_completo
@@ -103,7 +104,7 @@ BENDICION: [Bendición corta de 1 línea. Ej: "Que los astros guíen tu camino..
             consejo = "Confía en tu intuición y actúa con determinación."
         if not bendicion:
             bendicion = "Que la luz de Diana ilumine tu camino."
-        
+
         return jsonify({
             "cartas": cartas_salieron,
             "respuesta": respuesta,
@@ -119,7 +120,7 @@ def minijuego():
     simbolos = ["🔮", "🌙", "⭐", "🗝️", "🕯️", "⚡"]
     secuencia = random.sample(simbolos, 3)
     tirada_premio = random.sample(CARTAS, random.randint(3, 5))
-    
+
     return jsonify({
         "secuencia": secuencia,
         "tirada_premio": tirada_premio,
